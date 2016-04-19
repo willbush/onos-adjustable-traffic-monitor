@@ -37,9 +37,9 @@ The default username and password is: karaf
 However, there's no point enabling the app if there are no devices connected, so you need mininet up and running with a toplogy. I made a link on the VM desktop called "Setup Test Mininet Topo," click that if you are running the VM.
 
 Otherwise, run: 
-    sudo mn --custom /home/<YOUR_USER_NAME>/onos/tools/test/topos/tower.py --topo tower --controller remote,10.0.2.15 --mac
+    sudo mn --custom /home/YOUR_USER_NAME/onos/tools/test/topos/tower.py --topo tower --controller remote,10.0.2.15 --mac
 
-replace `<YOUR_USER_NAME>` with your user name. Also, if your ONOS IP differs from this one, replace the IP address with you ONOS IP address (described above). The path here is assuming you are running this on linux and have ONOS installed in your ~/ folder.
+replace `YOUR_USER_NAME` with your user name. Also, if your ONOS IP differs from this one, replace the IP address with you ONOS IP address (described above). The path here is assuming you are running this on linux and have ONOS installed in your ~/ folder.
 
 Now with the network tower toplogy up and running, ONOS should detect the devices and you should see the topology on the Web GUI. However, you probably only see the switches. if you hit the `/` or `\` key it will bring up a quick help. From there you can discover that the host visibility can be toggled with the `H` key. Hit that key and make sure it says the host are visible. Now if you still cannot see them, you probably need to do a `pingall` in mininet so that all the hosts are discovered. Now you should see a toplogy with switches and hosts.
 
@@ -51,7 +51,7 @@ Click the "link mode" far right icon and the links between switches and hosts sh
 
 You can import this source code the same way you import ONOS source code, which is outlined [here](https://wiki.onosproject.org/display/ONOS/Web+UI+Tutorial+-+Creating+a+Custom+View) (scroll down to "Import into IntelliJ" or [here](https://wiki.onosproject.org/display/ONOS/Importing+ONOS+projects+into+IntelliJ+IDEA).
 
-To attach the debugger to the remote process follow [this guide](https://www.youtube.com/watch?v=UzWcI9KvP0g).
+To attach the debugger to the remote process follow [this guide](https://www.youtube.com/watch?v=UzWcI9KvP0g), except where the IP is set to localhost in his, it is 10.0.2.15 in the VM (the value of $ONOS_IP, type `echo $ONOS_IP` to see it).
 
 ###Trouble Shooting ONOS
 
