@@ -2,25 +2,23 @@
 
 ###Getting Things Running
 
-To get this app working it requires ONOS to be setup and working. In addition, if you want to see this app actually do anything, then mininet needs to also be installed. Either use a VM that I provided that has everything already setup or set it up from scratch. Read more about installing ONOS from scratch [here](https://wiki.onosproject.org/display/ONOS/ONOS+from+Scratch) and mininet [here](mininet.org/download/). 
+To get this app working it requires ONOS to be setup and working. In addition, if you want to see this app actually do anything, then mininet needs to also be installed. Either use a VM that I provided that has everything already setup or set it up from scratch. Read more about installing ONOS from scratch [here](https://wiki.onosproject.org/display/ONOS/ONOS+from+Scratch) and mininet [here](http://mininet.org/download/). 
 
 Note that if you do this from scratch, build ONOS from their sources since we are using their latest release. Regardless, this needs maven and Java JDK 8 to build anyway, so you should have everything required to build from source.
 
 Steps to get this going is as follows:
 
-'''
+```
 cd
 git clone https://github.com/willbush/onos-test-sdn-app.git
 cd onos-test-sdn-app/
 mvn clean install
 onos-app $ONOS_IP install! target/tester-sample-1.0-SNAPSHOT.oar
-'''
+```
 
 The last step will fail unless you have ONOS up and running. The output should look like this if it correctly installs:
 
-'''
-{"name":"org.foo.app","id":84,"version":"1.0.SNAPSHOT","category":"UI","description":"ONOS OSGi UI Topology-View bundle archetype.","readme":"ONOS OSGi UI Topology-View bundle archetype.","origin":"Foo, Inc.","url":"http://onosproject.org","featuresRepo":"mvn:org.tester.app.sample/tester-sample/1.0-SNAPSHOT/xml/features","state":"ACTIVE","features":["tester-sample"],"permissions":[],"requiredApps":[]}
-'''
+    {"name":"org.foo.app","id":84,"version":"1.0.SNAPSHOT","category":"UI","description":"ONOS OSGi UI Topology-View bundle archetype.","readme":"ONOS OSGi UI Topology-View bundle archetype.","origin":"Foo, Inc.","url":"http://onosproject.org","featuresRepo":"mvn:org.tester.app.sample/tester-sample/1.0-SNAPSHOT/xml/features","state":"ACTIVE","features":["tester-sample"],"permissions":[],"requiredApps":[]}
 
 $ONOS_IP is the ip for onos if you are using the virtual machine I provided. Otherwise it might just be localhost or something different if you installed onos from scratch. Usually you can see the IP address it uses when ONOS boots up. It will say, `Creating local cluster configs for IP ...` and that is the IP you need to install to.
 
@@ -51,7 +49,7 @@ Click the "link mode" far right icon and the links between switches and hosts sh
 
 ###IntelliJ development
 
-You can import this source code the same way you import ONOS source code, which is outlined [here](https://wiki.onosproject.org/display/ONOS/Web+UI+Tutorial+-+Creating+a+Custom+View) (scroll down to "Import into IntelliJ" or [here](://wiki.onosproject.org/display/ONOS/Importing+ONOS+projects+into+IntelliJ+IDEA).
+You can import this source code the same way you import ONOS source code, which is outlined [here](https://wiki.onosproject.org/display/ONOS/Web+UI+Tutorial+-+Creating+a+Custom+View) (scroll down to "Import into IntelliJ" or [here](https://wiki.onosproject.org/display/ONOS/Importing+ONOS+projects+into+IntelliJ+IDEA).
 
 To attach the debugger to the remote process follow [this guide](https://www.youtube.com/watch?v=UzWcI9KvP0g).
 
