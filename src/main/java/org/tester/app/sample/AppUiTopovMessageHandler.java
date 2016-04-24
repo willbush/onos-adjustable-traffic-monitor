@@ -140,13 +140,10 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String id = string(payload, "id");
-            log.debug("Update Display: id [{}]", id);
-            if (!Strings.isNullOrEmpty(id)) {
-                updateForMode(id);
-            } else {
+            if (currentMode == Mode.MONITOR)
+                sendAllPortTraffic();
+            else
                 clearAllHighlightedLinksInTopology();
-            }
         }
     }
 
@@ -164,35 +161,13 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         }
     }
 
+    private void clearAllHighlightedLinksInTopology() {
+        sendHighlights(new Highlights());
+    }
+
     private void clearState() {
         currentMode = Mode.IDLE;
         linkSet = EMPTY_LINK_SET;
-    }
-
-    private void updateForMode(String id) {
-        log.debug("host service: {}", hostService);
-        log.debug("device service: {}", deviceService);
-
-        try {
-            HostId hid = HostId.hostId(id);
-            log.debug("host id {}", hid);
-
-        } catch (Exception e) {
-            try {
-                DeviceId did = DeviceId.deviceId(id);
-                log.debug("device id {}", did);
-
-            } catch (Exception e2) {
-                log.debug("Unable to process ID [{}]", id);
-            }
-        }
-
-        if (currentMode == Mode.MONITOR)
-            sendAllPortTraffic();
-    }
-
-    private void clearAllHighlightedLinksInTopology() {
-        sendHighlights(new Highlights());
     }
 
     private void sendHighlights(Highlights highlights) {
@@ -216,11 +191,14 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
     private Highlights buildHighlights() {
         Highlights highlights = new Highlights();
         TrafficLinkMap linkMap = new TrafficLinkMap();
+
         linkService.getLinks().forEach(linkMap::add);
+
         hostService.getHosts().forEach(host -> {
             linkMap.add(createEdgeLink(host, true));
             linkMap.add(createEdgeLink(host, false));
         });
+
         for (TrafficLink link : linkMap.biLinks()) {
             attachPortLoad(link);
             // we only want to report on links deemed to have traffic
