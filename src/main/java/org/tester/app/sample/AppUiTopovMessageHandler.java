@@ -15,7 +15,6 @@
  */
 package org.tester.app.sample;
 
-import com.google.common.collect.HashMultimap;
 import org.onosproject.incubator.net.PortStatisticsService;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
@@ -45,24 +44,28 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
     private static final String SAMPLE_TOPOV_DISPLAY_START = "sampleTopovDisplayStart";
     private static final String SAMPLE_TOPOV_DISPLAY_UPDATE = "sampleTopovDisplayUpdate";
     private static final String SAMPLE_TOPOV_DISPLAY_STOP = "sampleTopovDisplayStop";
+    private static final String TRAFFIC_THRESHOLD_UPDATE = "trafficThresholdUpdate";
 
     private static final String ID = "id";
     private static final String MODE = "mode";
+    private static final String THRESHOLD = "threshold";
 
     private static final long UPDATE_PERIOD_MS = 200;
 
     private static final Link[] EMPTY_LINK_SET = new Link[0];
 
-    private static Element currentlySelectedElement;
+    private static double KBps_threshold = 0.0;
+
+    private Element currentlySelectedElement;
 
     private enum Mode {IDLE, MOUSE, LINK}
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private static DeviceService deviceService;
-    private static HostService hostService;
-    private static LinkService linkService;
-    private static PortStatisticsService portStatisticsService;
+    private DeviceService deviceService;
+    private HostService hostService;
+    private LinkService linkService;
+    private PortStatisticsService portStatisticsService;
 
     private final Timer timer = new Timer("sample-overlay");
     private TimerTask demoTask = null;
@@ -84,41 +87,30 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         return ImmutableSet.of(
                 new DisplayStartHandler(),
                 new DisplayUpdateHandler(),
-                new DisplayStopHandler()
+                new DisplayStopHandler(),
+                new ThresholdHandler()
         );
     }
 
-    public static HashMap<String, String> getCurrentElementStats() {
-        HashMap<String, String> elementStats = new HashMap<>();
+    // Handler classes
 
-        if (currentlySelectedElement != null && currentlySelectedElement instanceof Device) {
-            DeviceId id = (DeviceId) currentlySelectedElement.id();
-            Set<Link> links = linkService.getDeviceLinks(id);
-            for (Link l : links) {
-                long rate = portStatisticsService.load(l.src()).rate();
-                elementStats.put("rate: ", TopoUtils.formatBitRate(rate));
-            }
-        } else if (currentlySelectedElement != null && currentlySelectedElement instanceof Host) {
-            HostId id = (HostId) currentlySelectedElement.id();
-            TrafficLinkMap linkMap = new TrafficLinkMap();
-            Host h = hostService.getHost(id);
-            linkMap.add(createEdgeLink(h, true));
-            linkMap.add(createEdgeLink(h, false));
+    private final class ThresholdHandler extends RequestHandler {
 
-            for (TrafficLink l : linkMap.biLinks()) {
-                Load egressSrc = portStatisticsService.load(l.one().src());
-                Load egressDst = portStatisticsService.load(l.one().dst());
+        public ThresholdHandler() {
+            super(TRAFFIC_THRESHOLD_UPDATE);
+        }
 
-                if (egressSrc != null)
-                    elementStats.put("source rate: ", TopoUtils.formatBitRate(egressSrc.rate()));
-                if (egressDst != null)
-                    elementStats.put("Destination rate: ", TopoUtils.formatBitRate(egressDst.rate()));
+        @Override
+        public void process(long sid, ObjectNode payload) {
+            String threshold = string(payload, THRESHOLD);
+
+            if (!Strings.isNullOrEmpty(threshold)) {
+                int numOfKiloBytes = Integer.valueOf(threshold);
+                KBps_threshold = numOfKiloBytes * TopoUtils.KILO;
+                log.debug("threshold set to: ", KBps_threshold);
             }
         }
-        return elementStats;
     }
-
-    // Handler classes
 
     private final class DisplayStartHandler extends RequestHandler {
         public DisplayStartHandler() {
@@ -144,7 +136,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
                     currentMode = Mode.LINK;
                     scheduleTask();
                     initLinkSet();
-                    //sendLinkData();
                     sendAllPortTraffic();
                     break;
 
@@ -222,7 +213,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
                 break;
 
             case LINK:
-                //sendLinkData();
                 sendAllPortTraffic();
                 break;
 
@@ -321,7 +311,7 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         Link one = link.one();
         Load egressSrc = portStatisticsService.load(one.src());
         Load egressDst = portStatisticsService.load(one.dst());
-        link.addLoad(maxLoad(egressSrc, egressDst), 0);
+        link.addLoad(maxLoad(egressSrc, egressDst), KBps_threshold);
     }
 
     private Load maxLoad(Load a, Load b) {
@@ -334,27 +324,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         return a.rate() > b.rate() ? a : b;
     }
 
-    private void sendLinkData() {
-        DemoLinkMap linkMap = new DemoLinkMap();
-        for (Link link : linkSet) {
-            linkMap.add(link);
-        }
-        DemoLink dl = linkMap.add(linkSet[linkIndex]);
-        dl.makeImportant().setLabel(Integer.toString(linkIndex));
-        log.debug("sending link data (index {})", linkIndex);
-
-        linkIndex += 1;
-        if (linkIndex >= linkSet.length) {
-            linkIndex = 0;
-        }
-
-        Highlights highlights = new Highlights();
-        for (DemoLink dlink : linkMap.biLinks()) {
-            highlights.add(dlink.highlight(null));
-        }
-
-        sendHighlights(highlights);
-    }
 
     private synchronized void scheduleTask() {
         if (demoTask == null) {
@@ -380,7 +349,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
                 switch (currentMode) {
                     case LINK:
                         sendAllPortTraffic();
-                        //sendLinkData();
                         break;
 
                     default:

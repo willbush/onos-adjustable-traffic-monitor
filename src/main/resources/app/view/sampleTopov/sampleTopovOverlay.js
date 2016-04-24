@@ -63,17 +63,24 @@
         // NOTE: fully qual. button ID is derived from overlay-id and key-name
         keyBindings: {
             0: {
-                cb: function () { stds.stopDisplay(); },
+                cb: function () {
+                    stds.stopDisplay();
+                },
                 tt: 'Cancel Display Mode',
                 gid: 'xMark'
             },
             V: {
-                cb: function () { stds.startDisplay('mouse'); },
+                cb: function () {
+                    stds.updateThreshold();
+                    stds.startDisplay('mouse');
+                },
                 tt: 'Start Mouse Mode',
                 gid: '*banner'
             },
             F: {
-                cb: function () { stds.startDisplay('link'); },
+                cb: function () {
+                    stds.startDisplay('link');
+                },
                 tt: 'Start Link Mode',
                 gid: 'chain'
             },
@@ -133,11 +140,11 @@
     angular.module('ovSampleTopov')
         .run(['$log', 'TopoOverlayService', 'SampleTopovDemoService',
 
-        function (_$log_, _tov_, _stds_) {
-            $log = _$log_;
-            tov = _tov_;
-            stds = _stds_;
-            tov.register(overlay);
-        }]);
+            function (_$log_, _tov_, _stds_) {
+                $log = _$log_;
+                tov = _tov_;
+                stds = _stds_;
+                tov.register(overlay);
+            }]);
 
 }());
