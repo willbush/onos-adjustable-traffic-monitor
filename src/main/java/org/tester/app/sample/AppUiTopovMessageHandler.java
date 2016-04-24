@@ -29,7 +29,6 @@ import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiConnection;
 import org.onosproject.ui.UiMessageHandler;
 import org.onosproject.ui.topo.*;
-import org.onosproject.ui.topo.NodeBadge.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,19 +45,13 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
     private static final String SAMPLE_TOPOV_DISPLAY_STOP = "sampleTopovDisplayStop";
     private static final String TRAFFIC_THRESHOLD_UPDATE = "trafficThresholdUpdate";
 
-    private static final String ID = "id";
-    private static final String MODE = "mode";
-    private static final String THRESHOLD = "threshold";
-
     private static final long UPDATE_PERIOD_MS = 200;
 
     private static final Link[] EMPTY_LINK_SET = new Link[0];
 
     private static double KBps_threshold = 0.0;
 
-    private Element currentlySelectedElement;
-
-    private enum Mode {IDLE, MOUSE, LINK}
+    private enum Mode {IDLE, MONITOR}
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -71,7 +64,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
     private TimerTask demoTask = null;
     private Mode currentMode = Mode.IDLE;
     private Link[] linkSet = EMPTY_LINK_SET;
-    private int linkIndex;
 
     @Override
     public void init(UiConnection connection, ServiceDirectory directory) {
@@ -102,7 +94,7 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String threshold = string(payload, THRESHOLD);
+            String threshold = string(payload, "threshold");
 
             if (!Strings.isNullOrEmpty(threshold)) {
                 int numOfKiloBytes = Integer.valueOf(threshold);
@@ -119,21 +111,15 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String mode = string(payload, MODE);
+            String mode = string(payload, "mode");
 
             log.debug("Start Display: mode [{}]", mode);
             clearState();
             clearAllHighlightedLinksInTopology();
 
             switch (mode) {
-                case "mouse":
-                    currentMode = Mode.MOUSE;
-                    cancelTask();
-                    sendMouseData();
-                    break;
-
-                case "link":
-                    currentMode = Mode.LINK;
+                case "monitor":
+                    currentMode = Mode.MONITOR;
                     scheduleTask();
                     initLinkSet();
                     sendAllPortTraffic();
@@ -154,7 +140,7 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String id = string(payload, ID);
+            String id = string(payload, "id");
             log.debug("Update Display: id [{}]", id);
             if (!Strings.isNullOrEmpty(id)) {
                 updateForMode(id);
@@ -180,7 +166,6 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
 
     private void clearState() {
         currentMode = Mode.IDLE;
-        currentlySelectedElement = null;
         linkSet = EMPTY_LINK_SET;
     }
 
@@ -191,35 +176,19 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         try {
             HostId hid = HostId.hostId(id);
             log.debug("host id {}", hid);
-            currentlySelectedElement = hostService.getHost(hid);
-            log.debug("host element {}", currentlySelectedElement);
 
         } catch (Exception e) {
             try {
                 DeviceId did = DeviceId.deviceId(id);
                 log.debug("device id {}", did);
-                currentlySelectedElement = deviceService.getDevice(did);
-                log.debug("device element {}", currentlySelectedElement);
 
             } catch (Exception e2) {
                 log.debug("Unable to process ID [{}]", id);
-                currentlySelectedElement = null;
             }
         }
 
-        switch (currentMode) {
-            case MOUSE:
-                sendMouseData();
-                break;
-
-            case LINK:
-                sendAllPortTraffic();
-                break;
-
-            default:
-                break;
-        }
-
+        if (currentMode == Mode.MONITOR)
+            sendAllPortTraffic();
     }
 
     private void clearAllHighlightedLinksInTopology() {
@@ -230,54 +199,12 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         sendMessage(TopoJson.highlightsMessage(highlights));
     }
 
-    private void sendMouseData() {
-        if (currentlySelectedElement != null && currentlySelectedElement instanceof Device) {
-            DeviceId id = (DeviceId) currentlySelectedElement.id();
-            Set<Link> links = linkService.getDeviceEgressLinks(id);
-            Highlights highlights = fromLinks(links, id);
-            addDeviceBadge(highlights, id, links.size());
-            sendHighlights(highlights);
-        }
-    }
-
-    private void addDeviceBadge(Highlights h, DeviceId devId, int n) {
-        DeviceHighlight dh = new DeviceHighlight(devId.toString());
-        dh.setBadge(createBadge(n));
-        h.add(dh);
-    }
-
-    private NodeBadge createBadge(int n) {
-        Status status = n > 3 ? Status.ERROR : Status.WARN;
-        String noun = n > 3 ? "(critical)" : "(problematic)";
-        String msg = "Egress links: " + n + " " + noun;
-        return NodeBadge.number(status, n, msg);
-    }
-
-    private Highlights fromLinks(Set<Link> links, DeviceId devId) {
-        DemoLinkMap linkMap = new DemoLinkMap();
-        if (links != null) {
-            log.debug("Processing {} links", links.size());
-            links.forEach(linkMap::add);
-        } else {
-            log.debug("No egress links found for device {}", devId);
-        }
-
-        Highlights highlights = new Highlights();
-
-        for (DemoLink dlink : linkMap.biLinks()) {
-            dlink.makeImportant().setLabel("Yo!");
-            highlights.add(dlink.highlight(null).addMod(new Mod("animated")));
-        }
-        return highlights;
-    }
-
     private void initLinkSet() {
         Set<Link> links = new HashSet<>();
         for (Link link : linkService.getActiveLinks()) {
             links.add(link);
         }
         linkSet = links.toArray(new Link[links.size()]);
-        linkIndex = 0;
         log.debug("initialized link set to {}", linkSet.length);
     }
 
@@ -346,14 +273,8 @@ public class AppUiTopovMessageHandler extends UiMessageHandler {
         @Override
         public void run() {
             try {
-                switch (currentMode) {
-                    case LINK:
-                        sendAllPortTraffic();
-                        break;
-
-                    default:
-                        break;
-                }
+                if (currentMode == Mode.MONITOR)
+                    sendAllPortTraffic();
             } catch (Exception e) {
                 log.warn("Unable to process demo task: {}", e.getMessage());
                 log.debug("Oops", e);
