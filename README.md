@@ -1,4 +1,8 @@
-# onos-test-sdn-app
+# ONOS Adjustable Traffic Monitor
+
+[Here](https://www.youtube.com/watch?v=bfOeAvl24Qw) is a quick video demo of this working.
+
+It's basically a re-implementation of the ONOS built in network traffic monitor, but this lets you adjust the traffic threshold for what traffic gets displayed on the topology.
 
 ###Getting Things Running
 
