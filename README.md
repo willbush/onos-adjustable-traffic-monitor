@@ -14,19 +14,19 @@ Steps to get this going is as follows:
 
 ```
 cd
-git clone https://github.com/willbush/onos-test-sdn-app.git
-cd onos-test-sdn-app/
+git clone https://github.com/willbush/onos-adjustable-traffic-monitor.git
+cd onos-adjustable-traffic-monitor/
 mvn clean install
 onos-app $ONOS_IP install! target/tester-sample-1.0-SNAPSHOT.oar
 ```
 
-The last step will fail unless you have ONOS up and running. The output should look like this if it correctly installs:
+The oar filename may change above as it is generated when you build.
+
+The last step will fail unless you have ONOS up and running. To get it running open a terminal and type `ok` to start ONOS, (see the Trouble Shooting ONOS section below for more info). The output should look like this if the app correctly installs:
 
     {"name":"org.foo.app","id":84,"version":"1.0.SNAPSHOT","category":"UI","description":"ONOS OSGi UI Topology-View bundle archetype.","readme":"ONOS OSGi UI Topology-View bundle archetype.","origin":"Foo, Inc.","url":"http://onosproject.org","featuresRepo":"mvn:org.tester.app.sample/tester-sample/1.0-SNAPSHOT/xml/features","state":"ACTIVE","features":["tester-sample"],"permissions":[],"requiredApps":[]}
 
 $ONOS_IP is the ip for onos if you are using the virtual machine I provided. Otherwise it might just be localhost or something different if you installed onos from scratch. Usually you can see the IP address it uses when ONOS boots up. It will say, `Creating local cluster configs for IP ...` and that is the IP you need to install to.
-
-The oar filename may change above as it is generated when you build.
 
 Also you can quickly reinstall the app after making a change to the source and building with the following command:
 
@@ -36,7 +36,7 @@ Now that you have the app installed, open the ONOS Web GUI by navigating to: [ht
 
 The default username and password is: karaf
 
-[See this page](https://wiki.onosproject.org/display/ONOS/The+ONOS+Web+GUI) which has a picture of the Web GUI. The Slide-out Topology Toolbar is what you need to click to find the button that enables this app.
+[See this page](https://wiki.onosproject.org/display/ONOS/The+ONOS+Web+GUI) which has a picture of the Web GUI. The Slide-out Topology Toolbar is what you need to click to find the button that enables this app. You can also see me doing this in the video demo linked above.
 
 However, there's no point enabling the app if there are no devices connected, so you need mininet up and running with a toplogy. I made a link on the VM desktop called "Setup Test Mininet Topo," click that if you are running the VM.
 
@@ -47,9 +47,9 @@ replace `YOUR_USER_NAME` with your user name. Also, if your ONOS IP differs from
 
 Now with the network tower toplogy up and running, ONOS should detect the devices and you should see the topology on the Web GUI. However, you probably only see the switches. if you hit the `/` or `\` key it will bring up a quick help. From there you can discover that the host visibility can be toggled with the `H` key. Hit that key and make sure it says the host are visible. Now if you still cannot see them, you probably need to do a `pingall` in mininet so that all the hosts are discovered. Now you should see a toplogy with switches and hosts.
 
-Now click Slide-out Toplogy in the bottom left corner and click the icon that looks like a 4 pointed star. When you mouse over the icon it should say "Sample Meowster Topo Overlay," I have not taken the time to go through everything and give stuff sensable names yet. When you click that icon the bottom row (row below it) will change. These icons in the bottom row are like the different overlay settings for this app. The right-most icon "link mode" is really more like all-port trafic monitoring mode. The middle icon "mouse mode" is just from their Topo overlay example code, which I have been playing around with. The left most icon removes or "cancels" these overlays.
+Now click Slide-out Toplogy in the bottom left corner and click the icon that looks like a 4 pointed star. When you click that icon the bottom row (row below it) will change. The right most icon will enable monitoring, the middle lets to select the threshold (0 KBps is default), and left most icon disables or cancels the traffic monitoring overlay.
 
-Click the "link mode" far right icon and the links between switches and hosts should turn green showing the traffic. You can `pingall` in mininet a few times to generage traffic or if you want to really send a lot of traffic through then use `iperf` in mininet. If you just type in that command it will select two hosts to send the traffic between, otherwise you can specify the hosts. Type `help iperf` in mininet for more info.
+You can `pingall` in mininet a few times to generage traffic or if you want to really send a lot of traffic through then use `iperf` in mininet. If you just type in that command it will select two hosts to send the traffic between, otherwise you can specify the hosts. Type `help iperf` in mininet for more info.
 
 ###IntelliJ development
 
